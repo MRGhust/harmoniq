@@ -67,13 +67,13 @@ export const VinylCover: React.FC<VinylCoverProps> = ({
     >
       {/* Turntable Platter Base Platform */}
       <div
-        className="relative flex items-center justify-center rounded-3xl bg-neutral-950/80 backdrop-blur-2xl border border-white/10 p-4 shadow-2xl transition-all duration-500"
+        className="relative flex items-center justify-center rounded-3xl bg-[#11121d] border border-[#1e2030] p-4 transition-all duration-500"
         style={{
           width: dimension,
           height: dimension,
           boxShadow: isPlaying
-            ? '0 0 50px -10px rgba(139, 92, 246, 0.35), 0 0 30px -15px rgba(6, 182, 212, 0.4)'
-            : '0 20px 40px -15px rgba(0, 0, 0, 0.8)',
+            ? '0 0 30px -10px rgba(16, 185, 129, 0.25)'
+            : 'none',
         }}
       >
         {/* Subtle Platter Well Inset Ring */}

@@ -1,5 +1,6 @@
 import { Track, RoomSettings, UserRole, RoomUser, ChatMessage } from '@/types/room';
 import { SAMPLE_TRACKS } from './sampleTracks';
+import { getSupabase } from './supabaseClient';
 
 export interface ServerRoom {
   id: string;
@@ -29,6 +30,27 @@ if (!globalStore.__harmoniq_rooms) {
 }
 
 const rooms = globalStore.__harmoniq_rooms;
+
+// Async persistence to Supabase
+async function persistRoomToSupabase(room: ServerRoom) {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    await supabase.from('rooms').upsert({
+      id: room.id,
+      name: room.name,
+      description: room.description,
+      owner_id: room.ownerId,
+      owner_name: room.ownerName,
+      settings: room.settings,
+      playback: room.playback,
+      current_track_index: room.currentTrackIndex,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Silent failover to in-memory store
+  }
+}
 
 // Seed default room if absent
 function getOrCreateDefaultRoom(roomId: string): ServerRoom {
@@ -181,6 +203,7 @@ export function updateRoomPlayback(
   }
 
   rooms.set(roomId, room);
+  persistRoomToSupabase(room);
   return room;
 }
 
@@ -191,6 +214,7 @@ export function addTrackToRoom(roomId: string, track: Track): ServerRoom {
   const { room } = getAuthoritativeRoomState(roomId);
   room.playlist.push(track);
   rooms.set(roomId, room);
+  persistRoomToSupabase(room);
   return room;
 }
 
@@ -202,6 +226,7 @@ export function removeTrackFromRoom(roomId: string, trackId: string): ServerRoom
   room.playlist = room.playlist.filter((t) => t.id !== trackId);
   room.currentTrackIndex = Math.min(room.currentTrackIndex, Math.max(0, room.playlist.length - 1));
   rooms.set(roomId, room);
+  persistRoomToSupabase(room);
   return room;
 }
 
@@ -212,6 +237,7 @@ export function reorderRoomPlaylist(roomId: string, newPlaylist: Track[]): Serve
   const { room } = getAuthoritativeRoomState(roomId);
   room.playlist = newPlaylist;
   rooms.set(roomId, room);
+  persistRoomToSupabase(room);
   return room;
 }
 

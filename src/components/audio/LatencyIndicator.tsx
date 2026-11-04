@@ -109,7 +109,7 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
     <>
       {/* Latency & Sync Bar Card */}
       <div
-        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900/70 backdrop-blur-md border ${colorStyles.border} shadow-lg transition-all duration-300 ${className}`}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#131422] border ${colorStyles.border} transition-all duration-300 ${className}`}
       >
         {/* Pulsing Live Status Dot */}
         <div className="relative flex items-center justify-center w-2.5 h-2.5">
@@ -170,16 +170,16 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
       {/* Sync Drift Correction Explanatory Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-md rounded-2xl bg-neutral-900/90 border border-white/10 p-6 shadow-2xl backdrop-blur-xl text-neutral-200"
+              className="relative w-full max-w-md flat-card p-6 text-slate-200"
               dir={locale === 'fa' ? 'rtl' : 'ltr'}
             >
               {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center justify-between pb-3 border-b border-[#1c1e2d]">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
                     <Wifi className="w-5 h-5" />
@@ -190,7 +190,7 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
                         ? 'موتور همگام‌سازی هارمونیک'
                         : 'Harmoniq Synchronization Engine'}
                     </h3>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-slate-400">
                       {locale === 'fa'
                         ? 'نحوه اصلاح تاخیر و ناهماهنگی صوتی'
                         : 'How audio drift correction & clock sync work'}
@@ -201,39 +201,39 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white flat-button transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Status Overview Card */}
-              <div className="mt-4 p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+              <div className="mt-4 p-3 rounded-xl bg-[#141624] border border-[#1e2032] flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-neutral-400">
+                  <span className="text-slate-400">
                     {locale === 'fa' ? 'وضعیت فعلی اتصال:' : 'Current Connection:'}
                   </span>
                   <div className="flex items-center gap-2 mt-1">
                     <span className={`font-semibold ${colorStyles.text}`}>
                       {statusLabel}
                     </span>
-                    <span className="text-neutral-500">|</span>
-                    <span className="font-mono text-neutral-200">{latencyMs}ms RTT</span>
+                    <span className="text-slate-500">|</span>
+                    <span className="font-mono text-slate-200">{latencyMs}ms RTT</span>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-neutral-400">
+                  <span className="text-slate-400">
                     {locale === 'fa' ? 'آستانه تحمل:' : 'Tolerance:'}
                   </span>
-                  <p className="font-mono text-cyan-400 mt-1">±80ms</p>
+                  <p className="font-mono text-emerald-400 mt-1">±80ms</p>
                 </div>
               </div>
 
               {/* 3 Steps of Audio Drift Correction */}
               <div className="mt-4 space-y-3 text-xs leading-relaxed">
                 {/* Step 1: NTP Clock Sync */}
-                <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="flex items-start gap-3 p-2.5 rounded-xl bg-[#131420] border border-[#1e2030]">
                   <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 shrink-0 mt-0.5">
                     <Gauge className="w-4 h-4" />
                   </div>
@@ -243,16 +243,16 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
                         ? '۱. کالیبراسیون ساعت مبتنی بر NTP'
                         : '1. NTP-based Clock Calibration'}
                     </h4>
-                    <p className="text-neutral-400 mt-0.5">
+                    <p className="text-slate-400 mt-0.5">
                       {locale === 'fa'
-                        ? 'با محاسبه پیوسته زمان رفت و برگشت پینگ (RTT)، اختلاف زمانی ساعت محلی شما با میزبان محاسبه و خنثی می‌گردد.'
+                        ? 'با محاسبه پیوسته زمان رفت و برگشت پینگ (RTT)، اختلاف زمانی ساعت محلی شما با سرور محاسبه و خنثی می‌گردد.'
                         : 'Continuously samples round-trip ping time to estimate clock offset between local machine and host.'}
                     </p>
                   </div>
                 </div>
 
                 {/* Step 2: Pitch-Preserved Catchup */}
-                <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="flex items-start gap-3 p-2.5 rounded-xl bg-[#131420] border border-[#1e2030]">
                   <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 shrink-0 mt-0.5">
                     <Sliders className="w-4 h-4" />
                   </div>
@@ -262,17 +262,17 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
                         ? '۲. تنظیم نرم نرخ پخش (بدون تغییر گام صدا)'
                         : '2. Micro-rate Catchup (Pitch Preserved)'}
                     </h4>
-                    <p className="text-neutral-400 mt-0.5">
+                    <p className="text-slate-400 mt-0.5">
                       {locale === 'fa'
-                        ? 'در تاخیرهای جزئی (۱۵۰ تا ۸۰۰ میلی‌ثانیه)، سرعت پخش به آرامی بین ۰.۹۲x تا ۱.۰۸x تغییر می‌کند تا بدون قطع شدن یا پرش صدا، هماهنگی کامل حفظ شود.'
-                        : 'For minor drift (150ms - 800ms), audio playback rate dynamically adjusts between 0.92x and 1.08x smoothly without audible skips.'}
+                        ? 'در تاخیرهای جزئی (۱۵۰ تا ۸۰۰ میلی‌ثانیه)، سرعت پخش به آرامی بین ۰.۹۵x تا ۱.۰۵x تغییر می‌کند تا بدون قطع شدن یا پرش صدا، هماهنگی کامل حفظ شود.'
+                        : 'For minor drift (150ms - 800ms), audio playback rate dynamically adjusts between 0.95x and 1.05x smoothly without audible skips.'}
                     </p>
                   </div>
                 </div>
 
                 {/* Step 3: Hard Resync Guard */}
-                <div className="flex items-start gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
-                  <div className="p-1.5 rounded-lg bg-pink-500/10 text-pink-400 shrink-0 mt-0.5">
+                <div className="flex items-start gap-3 p-2.5 rounded-xl bg-[#131420] border border-[#1e2030]">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
                     <Zap className="w-4 h-4" />
                   </div>
                   <div>
@@ -281,21 +281,21 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
                         ? '۳. جهش بلادرنگ در انحراف بالا'
                         : '3. Hard Seek Re-alignment'}
                     </h4>
-                    <p className="text-neutral-400 mt-0.5">
+                    <p className="text-slate-400 mt-0.5">
                       {locale === 'fa'
-                        ? 'در صورت غیرفعال ماندن تب یا قطع شبکه بیش از ۸۰۰ میلی‌ثانیه، موقعیت دقیق پخش سریعاً به میلی‌ثانیه دقیق میزبان پرش می‌کند.'
-                        : 'If drift exceeds 800ms (e.g. background tab throttling), an instant seek aligns position with the host.'}
+                        ? 'در صورت غیرفعال ماندن تب یا قطع شبکه بیش از ۱.۲ ثانیه، موقعیت دقیق پخش سریعاً به میلی‌ثانیه دقیق سرور پرش می‌کند.'
+                        : 'If drift exceeds 1.2s (e.g. background tab throttling), an instant seek aligns position with the host.'}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Footer with Resync Button */}
-              <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between">
+              <div className="mt-5 pt-3 border-t border-[#1c1e2d] flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-neutral-400 hover:text-white text-xs transition-colors"
+                  className="px-4 py-2 rounded-xl flat-button text-slate-400 hover:text-white text-xs transition-colors"
                 >
                   {locale === 'fa' ? 'بستن' : 'Close'}
                 </button>
@@ -308,7 +308,7 @@ export const LatencyIndicator: React.FC<LatencyIndicatorProps> = ({
                       setIsModalOpen(false);
                     }}
                     disabled={resyncing}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium text-xs shadow-lg shadow-cyan-500/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl flat-button-primary text-xs font-semibold disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${resyncing ? 'animate-spin' : ''}`} />
                     <span>{resyncButtonLabel}</span>

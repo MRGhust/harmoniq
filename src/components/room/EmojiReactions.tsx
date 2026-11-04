@@ -162,8 +162,8 @@ export const EmojiReactions: React.FC<EmojiReactionsProps> = ({
 
       {/* Emoji Reaction Bar at bottom */}
       <div className="flex items-center justify-center pointer-events-auto">
-        <div className="flex items-center gap-1 sm:gap-2 px-3 py-2 rounded-2xl bg-[#12121e]/85 backdrop-blur-xl border border-white/10 shadow-2xl shadow-purple-950/30">
-          <span className="hidden md:inline text-[11px] text-white/40 pl-1 font-medium select-none">
+        <div className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 rounded-xl bg-[#131422] border border-[#1e2032] shadow-sm">
+          <span className="hidden md:inline text-[11px] text-slate-400 pl-1 font-medium select-none">
             واکنش زنده:
           </span>
 
@@ -173,13 +173,13 @@ export const EmojiReactions: React.FC<EmojiReactionsProps> = ({
             return (
               <motion.button
                 key={emoji}
-                whileHover={{ scale: 1.35, y: -4 }}
+                whileHover={{ scale: 1.3, y: -3 }}
                 whileTap={{ scale: 0.85 }}
                 disabled={disabled}
                 onClick={(e) => handleEmojiClick(emoji, e)}
                 title={label}
-                className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-lg sm:text-xl transition-colors hover:bg-white/10 active:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed select-none ${
-                  isJustClicked ? 'bg-purple-500/30 ring-2 ring-purple-400' : ''
+                className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-lg sm:text-xl transition-colors hover:bg-white/5 active:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed select-none ${
+                  isJustClicked ? 'bg-emerald-500/20 ring-1 ring-emerald-400' : ''
                 }`}
               >
                 <span>{emoji}</span>
@@ -190,7 +190,7 @@ export const EmojiReactions: React.FC<EmojiReactionsProps> = ({
                     initial={{ scale: 0.8, opacity: 1 }}
                     animate={{ scale: 2, opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="absolute inset-0 rounded-xl bg-purple-400/40 pointer-events-none"
+                    className="absolute inset-0 rounded-xl bg-emerald-400/30 pointer-events-none"
                   />
                 )}
               </motion.button>

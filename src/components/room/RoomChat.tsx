@@ -100,8 +100,8 @@ export const RoomChat: React.FC<RoomChatProps> = ({
                   <div
                     className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm break-words ${
                       isMe
-                        ? 'bg-emerald-600 text-slate-950 font-medium rounded-tr-none'
-                        : 'bg-[#181928] text-slate-200 border border-[#212438] rounded-tl-none'
+                        ? 'bg-emerald-600 text-slate-950 font-medium rounded-tl-none'
+                        : 'bg-[#181928] text-slate-200 border border-[#212438] rounded-tr-none'
                     }`}
                   >
                     {msg.text}

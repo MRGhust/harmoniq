@@ -85,9 +85,9 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     // Handle high DPI
     const handleResize = () => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * (window.devicePixelRatio || 1);
-      canvas.height = rect.height * (window.devicePixelRatio || 1);
-      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
     };
 
     handleResize();

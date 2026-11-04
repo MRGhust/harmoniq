@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { getLocalUserProfile, saveLocalUserProfile, LocalUserProfile } from '@/lib/storage';
 import { PRESET_AVATARS } from '@/lib/sampleTracks';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 export default function HomePage() {
   const router = useRouter();
@@ -325,6 +326,30 @@ export default function HomePage() {
                 />
               </div>
 
+              <ToggleSwitch
+                checked={isPrivate}
+                onChange={(checked) => setIsPrivate(checked)}
+                icon={<Lock className="w-4 h-4 text-amber-400" />}
+                label="اتاق خصوصی با رمز عبور"
+                description="تنها افراد دارای رمز عبور اجازه ورود به این اتاق را خواهند داشت."
+              />
+
+              {isPrivate && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    رمز عبور اتاق <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="رمز ورود به این اتاق..."
+                    value={roomPassword}
+                    onChange={(e) => setRoomPassword(e.target.value)}
+                    className="w-full bg-[#161726] border border-[#24273d] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+              )}
+
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
@@ -403,7 +428,48 @@ export default function HomePage() {
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-2">
-                  انتخاب چهره:
+                  تصویر فعلی:
+                </label>
+                <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-[#131420] border border-[#1e2030]">
+                  <img
+                    src={tempAvatar}
+                    alt="Current Avatar"
+                    className="w-14 h-14 rounded-xl object-cover bg-slate-800 border-2 border-emerald-500 shrink-0"
+                  />
+                  <div className="flex-1">
+                    <label
+                      htmlFor="avatar-file-input"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg flat-button text-xs text-emerald-400 hover:text-white cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>آپلود عکس از گوشی یا دستگاه</span>
+                    </label>
+                    <input
+                      type="file"
+                      id="avatar-file-input"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const { compressAvatarImage } = await import('@/lib/storage');
+                            const compressed = await compressAvatarImage(file);
+                            setTempAvatar(compressed);
+                          } catch (err) {
+                            console.error('Failed to compress avatar image:', err);
+                          }
+                        }
+                      }}
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      پشتیبانی از انواع عکس گالری و دوربین گوشی
+                    </p>
+                  </div>
+                </div>
+
+                <label className="block text-xs text-slate-400 mb-2">
+                  یا انتخاب از چهره‌های آماده:
                 </label>
                 <div className="grid grid-cols-4 gap-2 mb-3">
                   {PRESET_AVATARS.map((av, idx) => (

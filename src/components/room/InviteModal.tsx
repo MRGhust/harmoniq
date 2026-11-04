@@ -99,52 +99,52 @@ export const InviteModal: React.FC<InviteModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-lg bg-[#12121e]/95 border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-2xl flex flex-col my-auto"
+          className="relative w-full max-w-lg flat-card overflow-hidden flex flex-col my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/[0.02]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[#1c1e2d] bg-[#141522]">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                 <UserPlus className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-white">
                   دعوت دوستان به اتاق (Invite to Room)
                 </h3>
-                <p className="text-xs text-white/50 truncate max-w-[260px]">
+                <p className="text-xs text-slate-400 truncate max-w-[260px]">
                   اتاق: <span className="text-white font-medium">{roomName}</span>
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white flat-button transition"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Modal Body */}
-          <div className="p-5 sm:p-6 space-y-5">
+          <div className="p-5 sm:p-6 space-y-4 bg-[#11121d]">
             {/* 6-Digit Room Code Box */}
-            <div className="rounded-2xl bg-gradient-to-tr from-purple-900/20 via-black/40 to-cyan-900/20 border border-white/10 p-4 text-center space-y-2">
-              <span className="text-xs text-white/50">
+            <div className="rounded-xl bg-[#141624] border border-[#1e2032] p-4 text-center space-y-2">
+              <span className="text-xs text-slate-400">
                 کد اختصاصی اتاق (Room Code)
               </span>
               <div className="flex items-center justify-center gap-3">
-                <span className="font-mono text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-300 tracking-wider">
+                <span className="font-mono text-2xl sm:text-3xl font-black text-emerald-400 tracking-wider">
                   {roomId}
                 </span>
                 <button
                   onClick={handleCopyCode}
                   title="کپی کد اتاق"
-                  className="px-2.5 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 text-white flex items-center gap-1 transition"
+                  className="px-3 py-1.5 rounded-lg text-xs flat-button text-slate-300 hover:text-white flex items-center gap-1.5 transition"
                 >
                   {copiedCode ? (
                     <>
@@ -163,7 +163,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({
 
             {/* Direct Shareable Link */}
             <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 لینک مستقیم ورود به اتاق (Direct Join Link)
               </label>
               <div className="flex items-center gap-2">
@@ -171,15 +171,15 @@ export const InviteModal: React.FC<InviteModalProps> = ({
                   type="text"
                   readOnly
                   value={shareableUrl}
-                  className="w-full bg-black/40 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white/90 font-mono select-all focus:outline-none"
+                  className="w-full bg-[#161726] border border-[#24273d] focus:border-emerald-500/50 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-mono select-all focus:outline-none transition"
                 />
                 <button
                   onClick={handleCopyLink}
-                  className="shrink-0 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30 transition flex items-center gap-1.5"
+                  className="shrink-0 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flat-button-primary transition flex items-center gap-1.5"
                 >
                   {copiedLink ? (
                     <>
-                      <Check className="w-4 h-4 text-emerald-300" />
+                      <Check className="w-4 h-4 text-slate-950" />
                       <span>کپی شد!</span>
                     </>
                   ) : (
@@ -193,12 +193,12 @@ export const InviteModal: React.FC<InviteModalProps> = ({
             </div>
 
             {/* Interactive QR Code Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-              <div className="relative p-3 rounded-xl bg-white shadow-xl shadow-black/50 shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl bg-[#141624] border border-[#1e2032]">
+              <div className="relative p-3 rounded-xl bg-white shrink-0 border border-white/10">
                 <QRCodeSVG
                   id="room-qr-svg"
                   value={shareableUrl}
-                  size={120}
+                  size={110}
                   level="H"
                   includeMargin={false}
                 />
@@ -206,16 +206,16 @@ export const InviteModal: React.FC<InviteModalProps> = ({
 
               <div className="flex-1 space-y-2 text-center sm:text-right">
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-semibold text-white">
-                  <QrCode className="w-4 h-4 text-cyan-400" />
+                  <QrCode className="w-4 h-4 text-emerald-400" />
                   <span>اسکن سریع با موبایل (Scan & Join)</span>
                 </div>
-                <p className="text-[11px] text-white/50 leading-relaxed">
+                <p className="text-[11px] text-slate-400 leading-relaxed">
                   دوستان شما می‌توانند با دوربین گوشی هوشمند خود این بارکد را اسکن کرده و فوراً به اتاق متصل شوند.
                 </p>
                 <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
                   <button
                     onClick={handleDownloadQR}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium flat-button text-slate-300 hover:text-white transition"
                   >
                     <Download className="w-3 h-3" />
                     <span>دانلود بارکد QR</span>
@@ -228,16 +228,16 @@ export const InviteModal: React.FC<InviteModalProps> = ({
             <div className="pt-1">
               <button
                 onClick={handleNativeShare}
-                className="w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-white flex items-center justify-center gap-2 transition"
+                className="w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold flat-button flex items-center justify-center gap-2 text-slate-200 hover:text-white transition"
               >
-                <Share2 className="w-4 h-4 text-purple-400" />
+                <Share2 className="w-4 h-4 text-emerald-400" />
                 <span>اشتراک‌گذاری در پیام‌رسان‌ها (تلگرام، واتساپ، ...)</span>
               </button>
             </div>
           </div>
 
           {/* Footer note */}
-          <div className="px-5 py-3 border-t border-white/5 bg-black/20 text-[11px] text-white/40 flex items-center justify-center gap-1.5">
+          <div className="px-5 py-3 border-t border-[#1c1e2d] bg-[#0f101a] text-[11px] text-slate-400 flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>پیوستن به اتاق بدون نیاز به نصب نرم‌افزار اضافی و مستقیم در مرورگر</span>
           </div>
