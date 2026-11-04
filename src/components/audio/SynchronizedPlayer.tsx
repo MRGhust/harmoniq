@@ -1,9 +1,22 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, ShieldAlert, Zap } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  Volume2,
+  VolumeX,
+  Repeat,
+  Repeat1,
+  Shuffle,
+  Server,
+  Lock,
+  Radio,
+  Sliders,
+} from 'lucide-react';
 import { Track, PlaybackState, UserRole } from '@/types/room';
-import { SyncEngine } from '@/lib/syncEngine';
 import { getAudioAnalyser } from '@/lib/audioContext';
 
 interface SynchronizedPlayerProps {
@@ -11,11 +24,12 @@ interface SynchronizedPlayerProps {
   playback: PlaybackState;
   userRole: UserRole;
   allowMembersToControl: boolean;
-  syncEngine: SyncEngine;
   onPlayStateChange: (isPlaying: boolean, currentTime: number) => void;
   onSeek: (newTime: number) => void;
   onNextTrack: () => void;
   onPrevTrack: () => void;
+  onChangeLoopMode?: (mode: 'none' | 'one' | 'all') => void;
+  loopMode?: 'none' | 'one' | 'all';
 }
 
 export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
@@ -23,96 +37,100 @@ export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
   playback,
   userRole,
   allowMembersToControl,
-  syncEngine,
   onPlayStateChange,
   onSeek,
   onNextTrack,
   onPrevTrack,
+  onChangeLoopMode,
+  loopMode = 'all',
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [localCurrentTime, setLocalCurrentTime] = useState(0);
+  const [localCurrentTime, setLocalCurrentTime] = useState(playback.currentTime || 0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [isCatchingUp, setIsCatchingUp] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const canControl = userRole === 'host' || userRole === 'dj' || allowMembersToControl;
 
-  // Format time utility mm:ss
-  const formatTime = (seconds: number) => {
-    if (isNaN(seconds) || seconds < 0) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  // Format mm:ss
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Connect Web Audio API Analyser
+  // Connect Audio Analyser for visualizer
   useEffect(() => {
     if (audioRef.current) {
       getAudioAnalyser(audioRef.current);
     }
   }, [currentTrack]);
 
-  // Handle source changes
+  // Handle track source
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
-
     if (audio.src !== currentTrack.url) {
       audio.src = currentTrack.url;
       audio.load();
     }
   }, [currentTrack]);
 
-  // Synchronization reconciliation loop
+  // Synchronize with server playback state
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !currentTrack) return;
+    if (!audio || !currentTrack || isSeeking) return;
 
-    const interval = setInterval(() => {
-      if (isSeeking) return;
+    // Check play/pause state
+    if (playback.isPlaying && audio.paused) {
+      audio.play().catch(() => {});
+    } else if (!playback.isPlaying && !audio.paused) {
+      audio.pause();
+    }
 
-      const expected = syncEngine.calculateExpectedTime(
-        playback.currentTime,
-        playback.isPlaying,
-        playback.updatedAt,
-        playback.playbackRate
-      );
+    // Check drift against server position
+    const serverPosition = playback.currentTime;
+    const drift = Math.abs(audio.currentTime - serverPosition);
 
-      const result = syncEngine.reconcile(audio, expected, playback.isPlaying);
-      setIsCatchingUp(result.action === 'rate-adjust');
+    if (drift > 1.2) {
+      audio.currentTime = serverPosition;
+    } else if (drift > 0.25) {
+      // Soft catch-up: slightly tune speed
+      audio.playbackRate = audio.currentTime < serverPosition ? 1.05 : 0.95;
+    } else {
+      audio.playbackRate = 1.0;
+    }
+  }, [playback.isPlaying, playback.currentTime, currentTrack, isSeeking]);
 
-      if (!isSeeking) {
-        setLocalCurrentTime(audio.currentTime);
+  // Animation frame for local timeline
+  useEffect(() => {
+    let animId: number;
+    const updateProgress = () => {
+      if (audioRef.current && !isSeeking) {
+        setLocalCurrentTime(audioRef.current.currentTime);
       }
-    }, 250);
+      animId = requestAnimationFrame(updateProgress);
+    };
+    animId = requestAnimationFrame(updateProgress);
+    return () => cancelAnimationFrame(animId);
+  }, [isSeeking]);
 
-    return () => clearInterval(interval);
-  }, [playback, syncEngine, currentTrack, isSeeking]);
-
-  // Update volume
+  // Update audio element volume
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
 
-  // Play / Pause toggle
   const togglePlay = () => {
-    if (!canControl) return;
-    setHasUserInteracted(true);
-    const audio = audioRef.current;
+    if (!canControl || !currentTrack) return;
+    setHasInteracted(true);
     const nextState = !playback.isPlaying;
-    const time = audio ? audio.currentTime : playback.currentTime;
-    onPlayStateChange(nextState, time);
-  };
-
-  // Handle Seek slider
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const target = parseFloat(e.target.value);
-    setLocalCurrentTime(target);
+    const pos = audioRef.current ? audioRef.current.currentTime : localCurrentTime;
+    onPlayStateChange(nextState, pos);
   };
 
   const handleSeekEnd = () => {
@@ -124,18 +142,19 @@ export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
     onSeek(localCurrentTime);
   };
 
-  const handleSeekStart = () => {
-    if (canControl) {
-      setIsSeeking(true);
-    }
+  const toggleLoop = () => {
+    if (!onChangeLoopMode) return;
+    const modes: ('none' | 'one' | 'all')[] = ['all', 'one', 'none'];
+    const next = modes[(modes.indexOf(loopMode) + 1) % modes.length];
+    onChangeLoopMode(next);
   };
 
-  return (
-    <div className="w-full glass-panel rounded-2xl p-4 md:p-6 border border-white/10 shadow-2xl relative overflow-hidden">
-      {/* Background ambient subtle glow */}
-      <div className="absolute -right-20 -top-20 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+  const currentDuration = duration || currentTrack?.duration || 180;
+  const progressPercent = currentDuration > 0 ? (localCurrentTime / currentDuration) * 100 : 0;
 
-      {/* Hidden audio element */}
+  return (
+    <div className="w-full flat-card p-5 sm:p-6 relative overflow-hidden flex flex-col gap-5">
+      {/* Hidden HTML5 Audio Tag */}
       <audio
         ref={audioRef}
         crossOrigin="anonymous"
@@ -143,127 +162,150 @@ export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
         onEnded={onNextTrack}
       />
 
-      {/* Autoplay blocker banner if needed */}
-      {!hasUserInteracted && playback.isPlaying && (
-        <div className="mb-4 bg-purple-900/40 border border-purple-500/30 rounded-xl p-3 flex items-center justify-between text-xs text-purple-200 animate-pulse">
+      {/* Autoplay Unblocker Banner if paused by browser */}
+      {!hasInteracted && playback.isPlaying && (
+        <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between text-xs text-emerald-300">
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-purple-400 shrink-0" />
-            <span>پخش آغاز شده است. برای فعال‌سازی صدا و همگامی کلیک کنید:</span>
+            <Radio className="w-4 h-4 text-emerald-400 shrink-0 animate-pulse" />
+            <span>پخش هماهنگ سرور فعال است. برای روشن شدن صدای دستگاه کلیک کنید:</span>
           </div>
           <button
             onClick={() => {
-              setHasUserInteracted(true);
-              if (audioRef.current) {
-                audioRef.current.play().catch(() => {});
-              }
+              setHasInteracted(true);
+              audioRef.current?.play().catch(() => {});
             }}
-            className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition"
+            className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition"
           >
             فعال‌سازی صدا
           </button>
         </div>
       )}
 
-      {/* Track Info Display */}
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden bg-slate-800 border border-white/10 shrink-0 shadow-lg relative group">
-            {currentTrack?.coverUrl ? (
-              <img
-                src={currentTrack.coverUrl}
-                alt={currentTrack.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-800/40 to-cyan-800/40 text-purple-300 font-bold text-lg">
-                HQ
-              </div>
-            )}
-            {playback.isPlaying && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-0.5">
-                <span className="w-1 bg-cyan-400 rounded-full eq-bar-1" />
-                <span className="w-1 bg-purple-400 rounded-full eq-bar-2" />
-                <span className="w-1 bg-pink-400 rounded-full eq-bar-3" />
-                <span className="w-1 bg-emerald-400 rounded-full eq-bar-4" />
-              </div>
-            )}
-          </div>
+      {/* Top Section: Media Artwork & Details */}
+      <div className="flex flex-col sm:flex-row items-center gap-5">
+        {/* Flat Minimalist Artwork Box */}
+        <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden bg-slate-900 border border-white/5 shrink-0 shadow-lg group">
+          {currentTrack?.coverUrl ? (
+            <img
+              src={currentTrack.coverUrl}
+              alt={currentTrack.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-500 gap-1">
+              <Radio className="w-8 h-8 text-emerald-400/60" />
+              <span className="text-[11px] font-mono">Harmoniq</span>
+            </div>
+          )}
 
-          <div className="min-w-0">
-            <h3 className="font-semibold text-white text-base md:text-lg truncate">
-              {currentTrack ? currentTrack.title : 'صف پخش خالی است'}
-            </h3>
-            <p className="text-xs md:text-sm text-slate-400 truncate">
-              {currentTrack ? currentTrack.artist : 'آهنگی به لیست اضافه کنید'}
-            </p>
-          </div>
+          {/* Playing wave badge */}
+          {playback.isPlaying && (
+            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span>LIVE</span>
+            </div>
+          )}
         </div>
 
-        {/* Catch-up pill */}
-        {isCatchingUp && (
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[11px] text-cyan-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-            در حال تطبیق نرم
+        {/* Track Title, Artist, & Cloud Hosting Indicator */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center text-center sm:text-right">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium w-fit mb-2 self-center sm:self-start">
+            <Server className="w-3 h-3" />
+            <span>میزبانی مستقل روی سرور ابری • بدون وابستگی به اینترنت افراد</span>
           </div>
-        )}
+
+          <h2 className="text-xl sm:text-2xl font-bold text-white truncate mb-1">
+            {currentTrack ? currentTrack.title : 'هیچ آهنگی در صف نیست'}
+          </h2>
+
+          <p className="text-sm text-slate-400 truncate mb-2">
+            {currentTrack ? currentTrack.artist : 'از بخش صف، آهنگ دلخواه خود را اضافه کنید'}
+          </p>
+
+          {currentTrack?.addedBy?.name && (
+            <p className="text-xs text-slate-500">
+              اضافه شده توسط: <span className="text-slate-300">{currentTrack.addedBy.name}</span>
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* Progress Bar & Timers */}
-      <div className="space-y-1 mb-5">
-        <div className="relative group">
+      {/* Middle Section: Seek Slider & Timers */}
+      <div className="space-y-1.5">
+        <div className="relative group flex items-center">
           <input
             type="range"
             min={0}
-            max={duration || currentTrack?.duration || 100}
+            max={currentDuration}
             step={0.1}
             value={localCurrentTime}
             disabled={!canControl}
-            onMouseDown={handleSeekStart}
-            onTouchStart={handleSeekStart}
-            onChange={handleSeekChange}
+            onMouseDown={() => canControl && setIsSeeking(true)}
+            onTouchStart={() => canControl && setIsSeeking(true)}
+            onChange={(e) => setLocalCurrentTime(parseFloat(e.target.value))}
             onMouseUp={handleSeekEnd}
             onTouchEnd={handleSeekEnd}
-            className={`w-full h-1.5 md:h-2 rounded-lg appearance-none cursor-pointer transition-all ${
+            className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all ${
               canControl
-                ? 'bg-slate-700/80 accent-purple-500 hover:h-2.5'
-                : 'bg-slate-800 accent-slate-500 cursor-not-allowed opacity-75'
+                ? 'bg-slate-800 accent-emerald-400 hover:h-2'
+                : 'bg-slate-800 accent-slate-600 cursor-not-allowed opacity-60'
             }`}
           />
         </div>
-        <div className="flex justify-between items-center text-xs text-slate-400 font-mono">
+
+        <div className="flex justify-between items-center text-xs text-slate-400 font-mono px-0.5">
           <span>{formatTime(localCurrentTime)}</span>
           {!canControl && (
-            <span className="flex items-center gap-1 text-[11px] text-amber-400/80">
-              <ShieldAlert className="w-3 h-3" />
-              کنترل فقط با دی‌جی یا میزبان
+            <span className="flex items-center gap-1 text-[11px] text-amber-400/90 font-sans">
+              <Lock className="w-3 h-3" />
+              کنترل اختصاصی با میزبان یا دی‌جی
             </span>
           )}
-          <span>{formatTime(duration || currentTrack?.duration || 0)}</span>
+          <span>{formatTime(currentDuration)}</span>
         </div>
       </div>
 
-      {/* Main Controls & Local Volume */}
-      <div className="flex items-center justify-between gap-2">
-        {/* Playback Controls (Previous, Play/Pause, Next) */}
-        <div className="flex items-center gap-2 md:gap-3">
+      {/* Bottom Section: Standard Symmetrical Media Controls & Local Volume */}
+      <div className="flex items-center justify-between gap-3 pt-2 border-t border-white/5">
+        {/* Left Side: Loop Mode */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleLoop}
+            className={`p-2 rounded-xl transition ${
+              loopMode === 'none'
+                ? 'text-slate-500 hover:text-slate-300'
+                : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+            }`}
+            title={`حالت تکرار: ${loopMode === 'one' ? 'تک‌آهنگ' : loopMode === 'all' ? 'کل صف' : 'خاموش'}`}
+          >
+            {loopMode === 'one' ? (
+              <Repeat1 className="w-4 h-4" />
+            ) : (
+              <Repeat className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+
+        {/* Center: Main Playback Controls (Prev, Play/Pause, Next) */}
+        <div className="flex items-center gap-3">
           <button
             onClick={onPrevTrack}
             disabled={!canControl}
-            className={`p-2.5 rounded-xl text-slate-300 hover:text-white transition ${
-              canControl ? 'glass-button' : 'opacity-40 cursor-not-allowed'
+            className={`p-2.5 rounded-xl text-slate-300 hover:text-white flat-button transition ${
+              !canControl && 'opacity-40 cursor-not-allowed'
             }`}
             title="آهنگ قبلی"
           >
-            <SkipForward className="w-5 h-5 rotate-180" />
+            <SkipBack className="w-5 h-5" />
           </button>
 
           <button
             onClick={togglePlay}
             disabled={!canControl || !currentTrack}
-            className={`p-3.5 md:p-4 rounded-2xl flex items-center justify-center transition-all transform active:scale-95 shadow-lg ${
+            className={`w-13 h-13 p-3.5 rounded-2xl flex items-center justify-center transition transform active:scale-95 shadow-md ${
               canControl && currentTrack
-                ? 'bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white shadow-purple-500/25'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5'
+                ? 'flat-button-primary shadow-emerald-500/20'
+                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}
             title={playback.isPlaying ? 'توقف' : 'پخش'}
           >
@@ -277,8 +319,8 @@ export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
           <button
             onClick={onNextTrack}
             disabled={!canControl}
-            className={`p-2.5 rounded-xl text-slate-300 hover:text-white transition ${
-              canControl ? 'glass-button' : 'opacity-40 cursor-not-allowed'
+            className={`p-2.5 rounded-xl text-slate-300 hover:text-white flat-button transition ${
+              !canControl && 'opacity-40 cursor-not-allowed'
             }`}
             title="آهنگ بعدی"
           >
@@ -286,15 +328,15 @@ export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
           </button>
         </div>
 
-        {/* Local Volume Slider (Individual to each user) */}
-        <div className="flex items-center gap-2 bg-slate-900/60 border border-white/5 px-3 py-1.5 rounded-xl">
+        {/* Right Side: Local Volume Controls */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="text-slate-400 hover:text-white transition"
-            title={isMuted ? 'صدا را باز کن' : 'بی‌صدا'}
+            className="text-slate-400 hover:text-white transition p-1.5"
+            title={isMuted ? 'باز کردن صدا' : 'بی‌صدا'}
           >
             {isMuted || volume === 0 ? (
-              <VolumeX className="w-4 h-4 text-red-400" />
+              <VolumeX className="w-4 h-4 text-rose-400" />
             ) : (
               <Volume2 className="w-4 h-4" />
             )}
@@ -309,8 +351,8 @@ export const SynchronizedPlayer: React.FC<SynchronizedPlayerProps> = ({
               setVolume(parseFloat(e.target.value));
               if (isMuted) setIsMuted(false);
             }}
-            className="w-16 md:w-24 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-            title={`صدای محلی: ${Math.round(volume * 100)}%`}
+            className="w-16 sm:w-20 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+            title={`صدای دستگاه: ${Math.round(volume * 100)}%`}
           />
         </div>
       </div>
